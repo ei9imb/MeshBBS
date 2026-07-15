@@ -9,7 +9,7 @@ through the start() and stop() methods.
 
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractmethod
 
 
 class Component(ABC):
@@ -17,10 +17,10 @@ class Component(ABC):
     Base class for all MeshBBS components.
     """
 
+    @abstractmethod
     def start(self) -> None:
         """Start the component."""
-        return
 
+    @abstractmethod
     def stop(self) -> None:
         """Stop the component cleanly."""
-        return

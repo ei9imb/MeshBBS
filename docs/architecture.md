@@ -1,361 +1,179 @@
 # MeshBBS Architecture
-Version: 0.1
-Status: Draft
-Author: Domhnall Mac Aodha & ChatGPT
+
+## Overview
+
+MeshBBS is a lightweight Bulletin Board System designed to operate over the Meshtastic network.
+
+The application is intended to run continuously on low-power hardware such as a Raspberry Pi Zero while remaining easy to develop and test on a desktop computer.
+
+Development follows an incremental sprint workflow. The application must remain runnable after every sprint.
 
 ---
 
-# 1. Vision
-
-MeshBBS is an open-source community information server for Meshtastic networks.
-
-Rather than attempting to replace Meshtastic's messaging system, MeshBBS extends it by providing persistent information, structured services and local community resources while respecting the severe bandwidth limitations of LoRa.
-
-The primary design goal is to maximise usefulness while minimising airtime.
-
----
-
-# 2. Design Philosophy
-
-Every design decision should follow these principles.
-
-## 2.1 Airtime is precious
-
-Every transmission should justify the airtime it consumes.
-
-If a packet does not provide value, it should not be transmitted.
-
----
-
-## 2.2 Keep messages small
-
-Menus should fit inside a single Meshtastic packet whenever possible.
-
-Long responses should be paginated rather than transmitted in full.
-
----
-
-## 2.3 MeshBBS complements Meshtastic
-
-Meshtastic already provides excellent messaging.
-
-MeshBBS provides:
-
-- Persistent information
-- Structured information
-- Community resources
-- Mail storage
-- Bulletin boards
-
-It is **not** intended to become a replacement chat platform.
-
----
-
-## 2.4 Simplicity first
-
-A feature should only be added when it solves a real problem.
-
-The first release should remain intentionally small.
-
----
-
-## 2.5 Modular architecture
-
-Each component should have a single responsibility.
-
-Future features should be added without rewriting existing code.
-
----
-
-## 2.6 Configuration over code
-
-Node names, welcome messages, weather sources and other settings should never be hard-coded.
-
----
-
-## 2.7 The operating system is disposable
-
-The Raspberry Pi operating system should always be recoverable.
-
-GitHub contains the source.
-
-Configuration files are backed up separately.
-
-The SQLite database is backed up independently.
-
----
-
-# 3. Project Goals
-
-Version 0.1 will provide:
-
-- Bulletins
-- Mail
-- Maps
-- Weather
-- User statistics
-- Read tracking
-
-Nothing more.
-
-Features such as channels, local services, events and file transfer are intentionally deferred.
-
----
-
-# 4. System Architecture
-
-```
-           Meshtastic Network
-                    │
-             Heltec V3 Radio
-                    │
-              USB Serial Link
-                    │
-          Raspberry Pi Zero
-                    │
-             MeshBBS Application
-                    │
-               SQLite Database
-```
-
----
-
-# 5. Menu Structure
+# High-Level Architecture
 
 ```
 MeshBBS
-
-1 Bulletins
-2 Mail
-3 Maps
-4 Weather
-5 Stats
-6 Help
-
-0 Exit
+│
+├── Config
+├── Logger
+└── Components
+    ├── Database
+    ├── Meshtastic (planned)
+    ├── Bulletin Service (planned)
+    ├── Mail Service (planned)
+    ├── Weather Service (planned)
+    └── Statistics Service (planned)
 ```
 
-Submenus will be defined separately.
+Only components participate in the application lifecycle.
+
+Services such as configuration and logging are always available and are not lifecycle-managed.
 
 ---
 
-# 6. Session Management
-
-Every node interacting with MeshBBS has its own session.
-
-The BBS remembers:
-
-- Current menu
-- Current page
-- Current bulletin
-- Current mail item
-- Session timeout
-
-Navigation principles:
+# Project Structure
 
 ```
-0 = Back
+bbs/
+    application.py
+    component.py
+    config.py
+    constants.py
+    database.py
+    logger.py
+    main.py
+    models.py
+    repositories/
+        users.py
 
-9 = Home
-
-? = Help
+config/
+data/
+docs/
+logs/
+scripts/
+tests/
 ```
-
-Session state expires automatically after inactivity.
 
 ---
 
-# 7. Read Tracking
+# Components
 
-MeshBBS tracks what every user has already viewed.
+A component is responsible for a subsystem that requires startup and shutdown.
 
-Initially:
+Every component implements:
 
-- Bulletins
+- start()
+- stop()
 
-Future versions may extend this to:
+Current components:
 
-- Mail
-- Weather alerts
-- Announcements
-
-Read tracking should minimise unnecessary retransmissions.
+- Database
 
 ---
 
-# 8. Core Components
+# Models
 
-The application will eventually consist of modules similar to:
+Models represent domain objects.
 
-```
-main.py
+Models contain data only.
 
-meshtastic_client.py
+Current models:
 
-database.py
+- User
 
-session.py
-
-bulletins.py
-
-mail.py
-
-maps.py
-
-weather.py
-
-stats.py
-
-commands.py
-
-logging.py
-
-config.py
-```
-
-Each module should have a single responsibility.
+Models do not contain SQL.
 
 ---
 
-# 9. Logging
+# Repositories
 
-Everything important should be logged.
+Repositories are responsible for database access.
 
-Examples:
+Each repository owns one area of the schema.
 
-- Startup
-- Shutdown
-- Incoming packets
-- Outgoing packets
-- Errors
-- User activity
-- Administrative actions
+Current repositories:
 
-Logs should make unattended troubleshooting possible.
+- UserRepository
+
+Future repositories:
+
+- BulletinRepository
+- MailRepository
+- SettingsRepository
+
+Repositories do not know about the application.
+
+Repositories only depend on a database connection.
 
 ---
 
-# 10. Database
+# Database
 
-SQLite will be used.
+SQLite is the current storage engine.
 
-Likely entities include:
+The Database component is responsible for:
 
-- Users
-- Sessions
-- Bulletins
-- Mail
-- Statistics
+- Opening the database
+- Initialising the schema
+- Managing schema versions
+- Providing repository instances
+
+Business logic must never execute SQL directly.
+
+---
+
+# Logging
+
+All production logging should use the MeshBBS logger.
+
+The use of print() is permitted only for temporary debugging.
+
+---
+
+# Testing
+
+Every new subsystem should have automated tests.
+
+Tests should never use the production database.
+
+A dedicated test database should be used.
+
+---
+
+# Development Workflow
+
+Every sprint follows the same process:
+
+1. Plan
+2. Build
+3. Compile
+4. Run
+5. Test
+6. Commit
+7. Push
+
+The application should remain runnable after every sprint.
+
+---
+
+# Current Status
+
+Completed
+
+- Project framework
 - Configuration
+- Logging
+- Database component
+- User model
+- User repository
 
-The database schema will be documented separately.
+In Progress
 
----
+- Repository integration
 
-# 11. Statistics
+Next
 
-MeshBBS should collect anonymous operational statistics.
-
-Examples:
-
-- Total users
-- Active users today
-- Sessions started
-- Bulletins read
-- Mail sent
-- Most frequently used features
-- Uptime
-
-Administrative statistics may include additional information.
-
----
-
-# 12. Development Strategy
-
-Software development is performed before hardware integration.
-
-Current development environment:
-
-- Raspberry Pi Zero
-- USB Ethernet Gadget
-- SSH
-- VS Code Remote SSH
-- Git
-- GitHub
-
-Hardware integration with the Heltec will occur only after the software is mature.
-
----
-
-# 13. Roadmap
-
-Phase 1
-Architecture
-
-Phase 2
-Database
-
-Phase 3
-Session Engine
-
-Phase 4
-Meshtastic Interface
-
-Phase 5
-Bulletins
-
-Phase 6
-Mail
-
-Phase 7
-Maps
-
-Phase 8
-Weather
-
-Phase 9
-Statistics
-
-Phase 10
-Administration
-
-Phase 11
-Hardware Integration
-
-Phase 12
-Public Release
-
----
-
-# 14. Future Features
-
-Potential future additions include:
-
-- Channels directory
-- Local services directory
-- Community groups
-- Events
-- Emergency information
-- Buy & Sell
-- Polls
-- Weather stations
-- File transfer
-- Plugin architecture
-
-These are intentionally excluded from Version 0.1.
-
----
-
-# 15. Project Statement
-
-MeshBBS is not simply a bulletin board.
-
-It is intended to become a community information server for Meshtastic networks while respecting the unique limitations of LoRa communication.
-
-Every design decision should prioritise:
-
-1. Reliability
-2. Simplicity
-3. Efficient airtime usage
-4. Extensibility
-5. Community usefulness
+- Bulletin repository
+- Mail repository
+- Meshtastic interface

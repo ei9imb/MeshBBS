@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "meshbbs"
+version = "0.1.0"
+description = "A Bulletin Board System for Meshtastic networks."
+readme = "README.md"
+requires-python = ">=3.11"
+
+authors = [
+    { name = "Domhnall Mac Aodha" }
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0"
+]
+
+[tool.setuptools]
+packages = ["bbs"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
