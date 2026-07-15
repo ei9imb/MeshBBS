@@ -1,0 +1,17 @@
+"""
+MeshBBS Constants
+
+Application-wide constants.
+"""
+
+APP_NAME = "MeshBBS"
+
+DEFAULT_LOG_LEVEL = "INFO"
+
+DEFAULT_DATABASE = "data/meshbbs.db"
+
+DEFAULT_SESSION_TIMEOUT = 20
+
+DEFAULT_BULLETIN_PAGE_SIZE = 5
+
+DEFAULT_MAIL_PAGE_SIZE = 5

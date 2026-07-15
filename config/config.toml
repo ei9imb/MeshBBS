@@ -1,0 +1,25 @@
+# MeshBBS Configuration
+
+name = "Cumann Muscraí BBS"
+version = "0.1.0"
+
+[logging]
+level = "INFO"
+
+[database]
+path = "data/meshbbs.db"
+
+[session]
+timeout_minutes = 20
+
+[weather]
+enabled = true
+
+[maps]
+enabled = true
+
+[bulletins]
+page_size = 5
+
+[mail]
+page_size = 5
