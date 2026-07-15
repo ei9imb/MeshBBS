@@ -18,3 +18,16 @@ class User:
     long_name: str
     first_seen: str
     last_seen: str
+
+
+@dataclass(slots=True)
+class Bulletin:
+    """
+    Represents a bulletin stored by MeshBBS.
+    """
+
+    id: int | None
+    author: str
+    subject: str
+    body: str
+    created: str

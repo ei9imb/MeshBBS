@@ -9,6 +9,7 @@ from pathlib import Path
 
 from bbs.component import Component
 from bbs.logger import get_logger
+from bbs.repositories.bulletins import BulletinRepository
 from bbs.repositories.users import UserRepository
 
 
@@ -27,6 +28,7 @@ class Database(Component):
         self.logger = get_logger(__name__)
 
         self.users: UserRepository | None = None
+        self.bulletins: BulletinRepository | None = None
 
     @property
     def connection(self) -> sqlite3.Connection:
@@ -48,6 +50,7 @@ class Database(Component):
         self._initialise_schema()
 
         self.users = UserRepository(self.connection)
+        self.bulletins = BulletinRepository(self.connection)
 
         self.logger.info("Database ready.")
 
@@ -55,6 +58,7 @@ class Database(Component):
         """Stop the database component."""
 
         self.users = None
+        self.bulletins = None
 
         if self._connection is not None:
             self._connection.close()
