@@ -7,9 +7,19 @@ Implements the business logic for bulletin operations.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from enum import Enum
 
+from bbs.context import ExecutionContext
 from bbs.models import Bulletin
 from bbs.repositories.bulletins import BulletinRepository
+
+
+class DeleteResult(Enum):
+    """Result of attempting to delete a bulletin."""
+
+    SUCCESS = "success"
+    NOT_FOUND = "not_found"
+    PERMISSION_DENIED = "permission_denied"
 
 
 class BulletinService:
@@ -52,7 +62,29 @@ class BulletinService:
 
         return self._repository.get_all()
 
-    def delete(self, bulletin_id: int) -> None:
-        """Delete a bulletin."""
+    def delete(
+        self,
+        bulletin_id: int,
+        context: ExecutionContext,
+    ) -> DeleteResult:
+        """
+        Delete a bulletin.
+
+        Only the original author or an administrator may delete
+        a bulletin.
+        """
+
+        bulletin = self._repository.get(bulletin_id)
+
+        if bulletin is None:
+            return DeleteResult.NOT_FOUND
+
+        if (
+            bulletin.author_node_id != context.node_id
+            and not context.is_admin
+        ):
+            return DeleteResult.PERMISSION_DENIED
 
         self._repository.delete(bulletin_id)
+
+        return DeleteResult.SUCCESS

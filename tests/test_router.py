@@ -12,6 +12,7 @@ from bbs.commands.router import CommandRouter
 from bbs.context import ExecutionContext
 from bbs.database import Database
 from bbs.services.bulletins import BulletinService
+from bbs.services.mail import MailService
 
 
 TEST_DATABASE = Path("data") / "test_meshbbs.db"
@@ -29,8 +30,17 @@ def router() -> CommandRouter:
 
     try:
         assert database.bulletins is not None
+        assert database.mail is not None
+        assert database.users is not None
 
-        service = BulletinService(database.bulletins)
+        bulletin_service = BulletinService(
+            database.bulletins,
+        )
+
+        mail_service = MailService(
+            mail=database.mail,
+            users=database.users,
+        )
 
         context = ExecutionContext(
             node_id="!12345678",
@@ -40,7 +50,8 @@ def router() -> CommandRouter:
         )
 
         yield CommandRouter(
-            bulletins=service,
+            bulletins=bulletin_service,
+            mail=mail_service,
             context=context,
         )
 

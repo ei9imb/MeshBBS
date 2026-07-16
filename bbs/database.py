@@ -10,6 +10,7 @@ from pathlib import Path
 from bbs.component import Component
 from bbs.logger import get_logger
 from bbs.repositories.bulletins import BulletinRepository
+from bbs.repositories.mail import MailRepository
 from bbs.repositories.users import UserRepository
 
 
@@ -29,6 +30,7 @@ class Database(Component):
 
         self.users: UserRepository | None = None
         self.bulletins: BulletinRepository | None = None
+        self.mail: MailRepository | None = None
 
     @property
     def connection(self) -> sqlite3.Connection:
@@ -51,6 +53,7 @@ class Database(Component):
 
         self.users = UserRepository(self.connection)
         self.bulletins = BulletinRepository(self.connection)
+        self.mail = MailRepository(self.connection)
 
         self.logger.info("Database ready.")
 
@@ -59,6 +62,7 @@ class Database(Component):
 
         self.users = None
         self.bulletins = None
+        self.mail = None
 
         if self._connection is not None:
             self._connection.close()
@@ -73,7 +77,7 @@ class Database(Component):
 
         cursor.executescript(
             """
-            PRAGMA user_version = 1;
+            PRAGMA user_version = 3;
 
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,6 +87,23 @@ class Database(Component):
                 first_seen TEXT,
                 last_seen TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS user_aliases (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                node_id TEXT NOT NULL,
+                short_name TEXT,
+                long_name TEXT,
+                first_seen TEXT NOT NULL,
+                last_seen TEXT
+            );
+
+            CREATE INDEX IF NOT EXISTS
+                idx_user_aliases_node
+            ON user_aliases(node_id);
+
+            CREATE INDEX IF NOT EXISTS
+                idx_user_aliases_short_name
+            ON user_aliases(short_name);
 
             CREATE TABLE IF NOT EXISTS bulletins (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,13 +116,17 @@ class Database(Component):
 
             CREATE TABLE IF NOT EXISTS mail (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                sender TEXT NOT NULL,
-                recipient TEXT NOT NULL,
+                sender_node_id TEXT NOT NULL,
+                recipient_node_id TEXT NOT NULL,
                 subject TEXT NOT NULL,
                 body TEXT NOT NULL,
                 created TEXT NOT NULL,
-                delivered INTEGER NOT NULL DEFAULT 0
+                read_at TEXT
             );
+
+            CREATE INDEX IF NOT EXISTS
+                idx_mail_recipient
+            ON mail(recipient_node_id);
 
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,

@@ -6,8 +6,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from bbs.context import ExecutionContext
 from bbs.database import Database
-from bbs.services.bulletins import BulletinService
+from bbs.services.bulletins import BulletinService, DeleteResult
 
 
 TEST_DATABASE = Path("data") / "test_meshbbs.db"
@@ -45,8 +46,19 @@ def test_post_read_list_delete() -> None:
 
         assert len(bulletins) == 1
 
-        service.delete(bulletin_id)
+        context = ExecutionContext(
+            node_id="!12345678",
+            short_name="CMBB",
+            long_name="Cumann Muscraí",
+            is_admin=False,
+        )
 
+        result = service.delete(
+            bulletin_id,
+            context,
+        )
+
+        assert result is DeleteResult.SUCCESS
         assert service.read(bulletin_id) is None
 
     finally:

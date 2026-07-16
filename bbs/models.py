@@ -32,3 +32,22 @@ class Bulletin:
     subject: str
     body: str
     created: str
+
+
+@dataclass(slots=True)
+class Mail:
+    """
+    Represents a private mail message.
+    """
+
+    id: int | None
+
+    sender_node_id: str
+    recipient_node_id: str
+
+    subject: str
+    body: str
+
+    created: str
+
+    read_at: str | None

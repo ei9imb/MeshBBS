@@ -107,7 +107,10 @@ class BulletinRepository:
         """Delete a bulletin."""
 
         self._connection.execute(
-            "DELETE FROM bulletins WHERE id = ?",
+            """
+            DELETE FROM bulletins
+            WHERE id = ?
+            """,
             (bulletin_id,),
         )
 
