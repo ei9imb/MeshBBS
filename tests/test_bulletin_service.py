@@ -22,31 +22,35 @@ def test_post_read_list_delete() -> None:
     database = Database(TEST_DATABASE)
     database.start()
 
-    assert database.bulletins is not None
+    try:
+        assert database.bulletins is not None
 
-    service = BulletinService(database.bulletins)
+        service = BulletinService(database.bulletins)
 
-    bulletin_id = service.post(
-        author="CMBB",
-        subject="Welcome",
-        body="Welcome to Cumann Muscraí BBS.",
-    )
+        bulletin_id = service.post(
+            author_node_id="!12345678",
+            author_name="CMBB",
+            subject="Welcome",
+            body="Welcome to Cumann Muscraí BBS.",
+        )
 
-    bulletin = service.read(bulletin_id)
+        bulletin = service.read(bulletin_id)
 
-    assert bulletin is not None
-    assert bulletin.author == "CMBB"
-    assert bulletin.subject == "Welcome"
+        assert bulletin is not None
+        assert bulletin.author_node_id == "!12345678"
+        assert bulletin.author_name == "CMBB"
+        assert bulletin.subject == "Welcome"
 
-    bulletins = service.list()
+        bulletins = service.list()
 
-    assert len(bulletins) == 1
+        assert len(bulletins) == 1
 
-    service.delete(bulletin_id)
+        service.delete(bulletin_id)
 
-    assert service.read(bulletin_id) is None
+        assert service.read(bulletin_id) is None
 
-    database.stop()
+    finally:
+        database.stop()
 
-    if TEST_DATABASE.exists():
-        TEST_DATABASE.unlink()
+        if TEST_DATABASE.exists():
+            TEST_DATABASE.unlink()

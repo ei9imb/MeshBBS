@@ -6,7 +6,7 @@ Implements the business logic for bulletin operations.
 
 from __future__ import annotations
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from bbs.models import Bulletin
 from bbs.repositories.bulletins import BulletinRepository
@@ -20,7 +20,8 @@ class BulletinService:
 
     def post(
         self,
-        author: str,
+        author_node_id: str,
+        author_name: str,
         subject: str,
         body: str,
     ) -> int:
@@ -32,7 +33,8 @@ class BulletinService:
 
         bulletin = Bulletin(
             id=None,
-            author=author,
+            author_node_id=author_node_id,
+            author_name=author_name,
             subject=subject.strip(),
             body=body.strip(),
             created=datetime.now(UTC).isoformat(timespec="seconds"),

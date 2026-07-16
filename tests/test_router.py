@@ -27,28 +27,28 @@ def router() -> CommandRouter:
     database = Database(TEST_DATABASE)
     database.start()
 
-    assert database.bulletins is not None
+    try:
+        assert database.bulletins is not None
 
-    service = BulletinService(database.bulletins)
+        service = BulletinService(database.bulletins)
 
-    context = ExecutionContext(
-        node_id="!12345678",
-        short_name="DMA",
-        long_name="Domhnall",
-        is_admin=True,
-    )
+        context = ExecutionContext(
+            node_id="!12345678",
+            short_name="DMA",
+            long_name="Domhnall",
+            is_admin=True,
+        )
 
-    router = CommandRouter(
-        bulletins=service,
-        context=context,
-    )
+        yield CommandRouter(
+            bulletins=service,
+            context=context,
+        )
 
-    yield router
+    finally:
+        database.stop()
 
-    database.stop()
-
-    if TEST_DATABASE.exists():
-        TEST_DATABASE.unlink()
+        if TEST_DATABASE.exists():
+            TEST_DATABASE.unlink()
 
 
 def test_help_command(router: CommandRouter) -> None:
@@ -84,7 +84,8 @@ def test_post_bulletin_uses_authenticated_user(
     bulletin = router._bulletins.read(1)
 
     assert bulletin is not None
-    assert bulletin.author == "DMA"
+    assert bulletin.author_node_id == "!12345678"
+    assert bulletin.author_name == "DMA"
     assert bulletin.subject == "Welcome"
     assert bulletin.body == "Hello MeshBBS"
 

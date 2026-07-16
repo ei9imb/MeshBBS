@@ -22,36 +22,40 @@ def test_bulletin_repository() -> None:
     database = Database(TEST_DATABASE)
     database.start()
 
-    assert database.bulletins is not None
+    try:
+        assert database.bulletins is not None
 
-    bulletin = Bulletin(
-        id=None,
-        author="EI9IMB",
-        subject="Welcome",
-        body="Welcome to Cumann Muscraí BBS.",
-        created="2026-07-15T21:00:00",
-    )
+        bulletin = Bulletin(
+            id=None,
+            author_node_id="!12345678",
+            author_name="EI9IMB",
+            subject="Welcome",
+            body="Welcome to Cumann Muscraí BBS.",
+            created="2026-07-15T21:00:00",
+        )
 
-    bulletin_id = database.bulletins.add(bulletin)
+        bulletin_id = database.bulletins.add(bulletin)
 
-    loaded = database.bulletins.get(bulletin_id)
+        loaded = database.bulletins.get(bulletin_id)
 
-    assert loaded is not None
-    assert loaded.id == bulletin_id
-    assert loaded.author == bulletin.author
-    assert loaded.subject == bulletin.subject
-    assert loaded.body == bulletin.body
+        assert loaded is not None
+        assert loaded.id == bulletin_id
+        assert loaded.author_node_id == bulletin.author_node_id
+        assert loaded.author_name == bulletin.author_name
+        assert loaded.subject == bulletin.subject
+        assert loaded.body == bulletin.body
 
-    bulletins = database.bulletins.get_all()
+        bulletins = database.bulletins.get_all()
 
-    assert len(bulletins) == 1
-    assert bulletins[0].id == bulletin_id
+        assert len(bulletins) == 1
+        assert bulletins[0].id == bulletin_id
 
-    database.bulletins.delete(bulletin_id)
+        database.bulletins.delete(bulletin_id)
 
-    assert database.bulletins.get(bulletin_id) is None
+        assert database.bulletins.get(bulletin_id) is None
 
-    database.stop()
+    finally:
+        database.stop()
 
-    if TEST_DATABASE.exists():
-        TEST_DATABASE.unlink()
+        if TEST_DATABASE.exists():
+            TEST_DATABASE.unlink()

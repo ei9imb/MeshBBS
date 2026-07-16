@@ -23,15 +23,17 @@ class BulletinRepository:
         cursor = self._connection.execute(
             """
             INSERT INTO bulletins (
-                author,
+                author_node_id,
+                author_name,
                 subject,
                 body,
                 created
             )
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
             """,
             (
-                bulletin.author,
+                bulletin.author_node_id,
+                bulletin.author_name,
                 bulletin.subject,
                 bulletin.body,
                 bulletin.created,
@@ -49,7 +51,8 @@ class BulletinRepository:
             """
             SELECT
                 id,
-                author,
+                author_node_id,
+                author_name,
                 subject,
                 body,
                 created
@@ -64,7 +67,8 @@ class BulletinRepository:
 
         return Bulletin(
             id=row["id"],
-            author=row["author"],
+            author_node_id=row["author_node_id"],
+            author_name=row["author_name"],
             subject=row["subject"],
             body=row["body"],
             created=row["created"],
@@ -77,7 +81,8 @@ class BulletinRepository:
             """
             SELECT
                 id,
-                author,
+                author_node_id,
+                author_name,
                 subject,
                 body,
                 created
@@ -89,7 +94,8 @@ class BulletinRepository:
         return [
             Bulletin(
                 id=row["id"],
-                author=row["author"],
+                author_node_id=row["author_node_id"],
+                author_name=row["author_name"],
                 subject=row["subject"],
                 body=row["body"],
                 created=row["created"],

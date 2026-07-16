@@ -86,7 +86,8 @@ class Database(Component):
 
             CREATE TABLE IF NOT EXISTS bulletins (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                author TEXT NOT NULL,
+                author_node_id TEXT NOT NULL,
+                author_name TEXT NOT NULL,
                 subject TEXT NOT NULL,
                 body TEXT NOT NULL,
                 created TEXT NOT NULL

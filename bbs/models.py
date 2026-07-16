@@ -27,7 +27,8 @@ class Bulletin:
     """
 
     id: int | None
-    author: str
+    author_node_id: str
+    author_name: str
     subject: str
     body: str
     created: str

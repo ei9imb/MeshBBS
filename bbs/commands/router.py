@@ -48,6 +48,9 @@ class CommandRouter:
         if opcode == "RB":
             return self._read_bulletin(arguments)
 
+        if opcode == "DB":
+            return self._delete_bulletin(arguments)
+
         return f"Unknown command: {opcode}"
 
     def _help(self) -> str:
@@ -75,7 +78,7 @@ class CommandRouter:
 
         for bulletin in bulletins:
             lines.append(
-                f"{bulletin.id:3} {bulletin.author:4} {bulletin.subject}"
+                f"{bulletin.id:3} {bulletin.author_name:4} {bulletin.subject}"
             )
 
         return "\n".join(lines)
@@ -92,7 +95,8 @@ class CommandRouter:
             return "Usage: PB.subject.body"
 
         bulletin_id = self._bulletins.post(
-            author=self._context.short_name,
+            author_node_id=self._context.node_id,
+            author_name=self._context.short_name,
             subject=arguments[0],
             body=arguments[1],
         )
@@ -122,8 +126,18 @@ class CommandRouter:
 
         return (
             f"Bulletin #{bulletin.id}\n"
-            f"Author : {bulletin.author}\n"
+            f"Author : {bulletin.author_name}\n"
             f"Subject: {bulletin.subject}\n"
             "\n"
             f"{bulletin.body}"
         )
+
+    def _delete_bulletin(self, arguments: list[str]) -> str:
+        """
+        Delete a bulletin.
+
+        Format:
+            DB.id
+        """
+
+        return "Not yet implemented."
