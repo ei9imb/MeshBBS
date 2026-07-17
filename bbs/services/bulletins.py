@@ -11,6 +11,7 @@ from enum import Enum
 
 from bbs.context import ExecutionContext
 from bbs.models import Bulletin
+from bbs.repositories import bulletins
 from bbs.repositories.bulletins import BulletinRepository
 
 
@@ -52,15 +53,39 @@ class BulletinService:
 
         return self._repository.add(bulletin)
 
-    def read(self, bulletin_id: int) -> Bulletin | None:
-        """Return a bulletin."""
+    def read(
+            self,
+            bulletin_id: int,
+            context: ExecutionContext,
+        ) -> Bulletin | None:
+        """Return a bulletin and record that it has been read."""
 
-        return self._repository.get(bulletin_id)
+        bulletin = self._repository.get(bulletin_id)
 
-    def list(self) -> list[Bulletin]:
-        """Return all bulletins."""
+        if bulletin is None:
+            return None
 
-        return self._repository.get_all()
+        self._repository.mark_read(
+            bulletin_id=bulletin_id,
+            node_id=context.node_id,
+            timestamp=datetime.now(UTC).isoformat(timespec="seconds"),
+        )
+
+        return bulletin
+
+    def list(
+        self,
+        context: ExecutionContext,
+    ) -> tuple[list[Bulletin], set[int]]:
+        """Return all bulletins and the user's read history."""
+
+        bulletins = self._repository.get_all()
+
+        read_ids = self._repository.read_ids(
+        context.node_id,
+        )
+
+        return bulletins, read_ids
 
     def delete(
         self,

@@ -77,7 +77,7 @@ class Database(Component):
 
         cursor.executescript(
             """
-            PRAGMA user_version = 3;
+            PRAGMA user_version = 4;
 
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -114,6 +114,26 @@ class Database(Component):
                 created TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS bulletin_reads (
+                bulletin_id INTEGER NOT NULL,
+                node_id TEXT NOT NULL,
+                read_at TEXT NOT NULL,
+
+                PRIMARY KEY (bulletin_id, node_id),
+
+                FOREIGN KEY (bulletin_id)
+                    REFERENCES bulletins(id)
+                    ON DELETE CASCADE,
+
+                FOREIGN KEY (node_id)
+                    REFERENCES users(node_id)
+                    ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS
+            idx_bulletin_reads_node
+        ON bulletin_reads(node_id);            
+
             CREATE TABLE IF NOT EXISTS mail (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 sender_node_id TEXT NOT NULL,
@@ -136,3 +156,14 @@ class Database(Component):
         )
 
         self.connection.commit()
+        
+    def schema_version(self) -> int:
+        """Return the database schema version."""
+
+        assert self.connection is not None
+
+        row = self.connection.execute(
+            "PRAGMA user_version"
+        ).fetchone()
+
+        return int(row[0])

@@ -148,3 +148,15 @@ class MailRepository:
         )
 
         self._connection.commit()
+        
+    def count(self) -> int:
+        """Return the number of mail messages."""
+
+        row = self._connection.execute(
+            """
+            SELECT COUNT(*)
+            FROM mail
+            """
+        ).fetchone()
+
+        return int(row[0])

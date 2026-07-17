@@ -106,7 +106,7 @@ class UserRepository:
                 first_seen,
                 last_seen
             FROM users
-            WHERE short_name = ?
+            WHERE short_name = ? COLLATE NOCASE
             """,
             (short_name,),
         ).fetchone()
@@ -227,3 +227,15 @@ class UserRepository:
                 node_id,
             ),
         )
+    
+    def count(self) -> int:
+        """Return the number of known users."""
+
+        row = self._connection.execute(
+            """
+            SELECT COUNT(*)
+            FROM users
+            """
+        ).fetchone()
+
+        return int(row[0])

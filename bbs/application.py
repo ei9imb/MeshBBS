@@ -11,9 +11,11 @@ from bbs.config import Config
 from bbs.context import ExecutionContext
 from bbs.database import Database
 from bbs.logger import get_logger
+from bbs.models import User
 from bbs.services.bulletins import BulletinService
 from bbs.services.mail import MailService
 from bbs.ui.cli import CommandLineInterface
+from bbs.services.statistics import StatisticsService
 
 
 class MeshBBS:
@@ -62,6 +64,26 @@ class MeshBBS:
             assert self.database.bulletins is not None
             assert self.database.mail is not None
 
+            self.database.users.add(
+                User(
+                    node_id="!LOCALDEV",
+                    short_name="MBBS",
+                    long_name="Cumann Mhúscraí BBS",
+                    first_seen="2026-07-16T00:00:00",
+                    last_seen="2026-07-16T00:00:00",
+                )
+            )
+
+            self.database.users.add(
+                User(
+                    node_id="!TEST001",
+                    short_name="TUSER1",
+                    long_name="Test User 1",
+                    first_seen="2026-07-16T00:00:00",
+                    last_seen="2026-07-16T00:00:00",
+                )
+            )
+
             bulletin_service = BulletinService(
                 self.database.bulletins,
             )
@@ -71,18 +93,25 @@ class MeshBBS:
                 users=self.database.users,
             )
 
+            statistics_service = StatisticsService(
+                users=self.database.users,
+                bulletins=self.database.bulletins,
+                mail=self.database.mail,
+            )
+
             context = ExecutionContext(
                 node_id="!LOCALDEV",
-                short_name="SYSOP",
-                long_name="Development Console",
+                short_name="MBBS",
+                long_name="Cumann Mhúscraí BBS",
                 is_admin=True,
             )
 
             router = CommandRouter(
                 bulletins=bulletin_service,
                 mail=mail_service,
+                statistics=statistics_service,
                 context=context,
-            )
+        )
 
             cli = CommandLineInterface(router)
 

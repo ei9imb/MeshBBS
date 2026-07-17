@@ -3,10 +3,11 @@ MeshBBS command router.
 """
 
 from __future__ import annotations
-
 from bbs.context import ExecutionContext
+from bbs.services import bulletins
 from bbs.services.bulletins import BulletinService, DeleteResult
 from bbs.services.mail import MailService
+from bbs.services.statistics import StatisticsService
 
 
 class CommandRouter:
@@ -16,10 +17,12 @@ class CommandRouter:
         self,
         bulletins: BulletinService,
         mail: MailService,
+        statistics: StatisticsService,
         context: ExecutionContext,
     ) -> None:
         self._bulletins = bulletins
         self._mail = mail
+        self._statistics = statistics
         self._context = context
 
     def execute(self, command: str) -> str:
@@ -40,7 +43,7 @@ class CommandRouter:
         arguments = parts[1:]
 
         if opcode == "HELP":
-            return self._help()
+           return self._help(arguments)
 
         if opcode == "LB":
             return self._list_bulletins()
@@ -50,6 +53,9 @@ class CommandRouter:
 
         if opcode == "RB":
             return self._read_bulletin(arguments)
+        
+        if opcode == "LDB":
+            return self._list_deletable_bulletins()
 
         if opcode == "DB":
             return self._delete_bulletin(arguments)
@@ -65,40 +71,139 @@ class CommandRouter:
 
         if opcode == "DM":
             return self._delete_mail(arguments)
+        
+        if opcode == "ST":
+            return self._statistics_summary()
 
         return f"Unknown command: {opcode}"
 
-    def _help(self) -> str:
-        return (
-            "MeshBBS Commands\n"
-            "\n"
-            "LB  List Bulletins\n"
-            "PB  Post Bulletin\n"
-            "RB  Read Bulletin\n"
-            "DB  Delete Bulletin\n"
-            "\n"
-            "LM  List Mail\n"
-            "SM  Send Mail\n"
-            "RM  Read Mail\n"
-            "DM  Delete Mail"
-        )
+    def _help(
+        self,
+        arguments: list[str],
+    ) -> str:
+        """Return one of the help pages."""
+
+        if not arguments:
+            return (
+                "Cumann Mhúscraí BBS\n"
+                "\n"
+                "Most users navigate using the menus.\n"
+                "Quick Commands provide faster access.\n"
+                "\n"
+                "Bulletins\n"
+                "----------\n"
+                "LB  List Bulletins\n"
+                "\n"
+                "PB  Post Bulletin\n"
+                "PB.[subject].[body]\n"
+                "e.g. PB.Storm.Warning in effect.\n"
+                "\n"
+                "RB  Read Bulletin\n"
+                "RB.[id]\n"
+                "e.g. RB.12\n"
+                "\n"
+                "[N]ext for page 2"
+            )
+
+        if arguments == ["2"]:
+            return (
+                "Bulletins (cont.)\n"
+                "\n"
+                "DB  Delete Bulletin\n"
+                "DB.[id]\n"
+                "e.g. DB.12\n"
+                "\n"
+                "Mail\n"
+                "----\n"
+                "LM  List Mail\n"
+                "\n"
+                "SM  Send Mail\n"
+                "SM.[recipient].[subject].[body]\n"
+                "e.g. SM.MBBS.Hello.Great BBS!\n"
+                "\n"
+                "RM  Read Mail\n"
+                "RM.[id]\n"
+                "e.g. RM.3\n"
+                "\n"
+                "DM  Delete Mail\n"
+                "DM.[id]\n"
+                "e.g. DM.3"
+            )
+
+        return "Usage: HELP or HELP.2"
 
     # ------------------------------------------------------------------
     # Bulletin Commands
     # ------------------------------------------------------------------
 
     def _list_bulletins(self) -> str:
-        bulletins = self._bulletins.list()
+        bulletins, read_ids = self._bulletins.list(
+            self._context,
+        )
 
         if not bulletins:
-            return "No bulletins."
+            return "Bulletins\n----------\n\nNo bulletins."
 
-        lines = []
+        lines = [
+            "Bulletins",
+            "----------",
+            "",
+        ]
 
         for bulletin in bulletins:
+            marker = " " if bulletin.id in read_ids else "*"
+
             lines.append(
-                f"{bulletin.id:3} {bulletin.author_name:8} {bulletin.subject}"
+                f"{marker} {bulletin.id:>3} {bulletin.author_name:<8} {bulletin.subject}"
             )
+
+        return "\n".join(lines)
+    
+    def _list_deletable_bulletins(self) -> str:
+        """
+        List bulletins that the current user may delete.
+
+        Normal users:
+            Only their own bulletins.
+
+        Administrators:
+            All bulletins.
+        """
+
+        bulletins, _ = self._bulletins.list(self._context)
+
+        if self._context.is_admin:
+            deletable = bulletins
+        else:
+            deletable = [
+                bulletin
+                for bulletin in bulletins
+                if bulletin.author_node_id == self._context.node_id
+            ]
+
+        if not deletable:
+            return (
+                "Delete Bulletins\n"
+                "-----------------\n\n"
+                "You have no bulletins that can be deleted."
+            )
+
+        lines = [
+            "Delete Bulletins",
+            "-----------------",
+            "",
+        ]
+
+        for bulletin in deletable:
+
+            if self._context.is_admin:
+                lines.append(
+                    f"{bulletin.id:>3} {bulletin.author_name:<8} {bulletin.subject}"
+                )
+            else:
+                lines.append(
+                    f"{bulletin.id:>3} {bulletin.subject}"
+                )
 
         return "\n".join(lines)
 
@@ -142,7 +247,10 @@ class CommandRouter:
         except ValueError:
             return "Bulletin ID must be a number."
 
-        bulletin = self._bulletins.read(bulletin_id)
+        bulletin = self._bulletins.read(bulletin_id, 
+                                        self._context,
+        )
+        
 
         if bulletin is None:
             return "Bulletin not found."
@@ -295,3 +403,17 @@ class CommandRouter:
             return str(error)
 
         return "Mail deleted."
+    
+    def _statistics_summary(self) -> str:
+        """Return MeshBBS statistics."""
+
+        stats = self._statistics.summary()
+
+        return (
+            "MeshBBS Statistics\n"
+            "\n"
+            f"Users......{stats['users']}\n"
+            f"Bulletins..{stats['bulletins']}\n"
+            f"Mail.......{stats['mail']}\n"
+            f"Uptime.....{stats['uptime']}"
+        )

@@ -69,9 +69,28 @@ def test_help_command(router: CommandRouter) -> None:
 
     assert "LB" in response
     assert "PB" in response
-    assert "LM" in response
-    assert "SM" in response
+    assert "RB" in response
+    assert "HELP.2 for more..." in response
 
+    assert "LM" not in response
+    assert "SM" not in response
+
+def test_help_page_two(router: CommandRouter) -> None:
+    """Verify HELP.2 returns the second help page."""
+
+    response = router.execute("HELP.2")
+
+    assert "Mail" in response
+    assert "SM.[recipient].[subject].[body]" in response
+    assert "DM  Delete Mail" in response
+
+
+def test_help_invalid_page(router: CommandRouter) -> None:
+    """Verify invalid help pages return usage information."""
+
+    response = router.execute("HELP.99")
+
+    assert response == "Usage: HELP or HELP.2"
 
 def test_list_bulletins_empty(router: CommandRouter) -> None:
     """Verify LB reports an empty bulletin board."""

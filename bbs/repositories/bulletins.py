@@ -115,3 +115,83 @@ class BulletinRepository:
         )
 
         self._connection.commit()
+
+    def count(self) -> int:
+        """Return the number of bulletins."""
+
+        row = self._connection.execute(
+            """
+            SELECT COUNT(*)
+            FROM bulletins
+            """
+        ).fetchone()
+
+        return int(row[0])
+    
+    def mark_read(
+        self,
+        bulletin_id: int,
+        node_id: str,
+        timestamp: str,
+    ) -> None:
+        """Record that a user has read a bulletin."""
+
+        self._connection.execute(
+            """
+            INSERT OR IGNORE INTO bulletin_reads (
+                bulletin_id,
+                node_id,
+                read_at
+            )
+            VALUES (?, ?, ?)
+            """,
+            (
+                bulletin_id,
+                node_id,
+                timestamp,
+            ),
+        )
+
+        self._connection.commit()
+
+    def has_read(
+        self,
+        bulletin_id: int,
+        node_id: str,
+    ) -> bool:
+        """Return True if the user has read the bulletin."""
+
+        row = self._connection.execute(
+            """
+            SELECT 1
+            FROM bulletin_reads
+            WHERE bulletin_id = ?
+              AND node_id = ?
+            """,
+            (
+                bulletin_id,
+                node_id,
+            ),
+        ).fetchone()
+
+        return row is not None
+    
+    def read_ids(
+        self,
+        node_id: str,
+    ) -> set[int]:
+        """Return the IDs of bulletins read by a user."""
+
+        rows = self._connection.execute(
+            """
+            SELECT bulletin_id
+            FROM bulletin_reads
+            WHERE node_id = ?
+            """,
+            (node_id,),
+        ).fetchall()
+
+        return {
+            int(row["bulletin_id"])
+            for row in rows
+        }

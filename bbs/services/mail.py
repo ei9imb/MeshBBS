@@ -81,6 +81,16 @@ class MailService:
         if mail is None:
             return None
 
+        display_name = self._users.get_display_name(
+            mail.sender_node_id
+        )
+
+        if display_name is not None:
+            mail.sender_node_id = display_name
+
+        if mail is None:
+            return None
+
         if mail.read_at is None:
             timestamp = datetime.now(
                 UTC
@@ -101,9 +111,19 @@ class MailService:
     ) -> list[Mail]:
         """Return the authenticated user's inbox."""
 
-        return self._mail.get_for_recipient(
+        inbox = self._mail.get_for_recipient(
             context.node_id,
         )
+
+        for mail in inbox:
+            display_name = self._users.get_display_name(
+                mail.sender_node_id
+            )
+
+            if display_name is not None:
+                mail.sender_node_id = display_name
+
+        return inbox
 
     def delete(
         self,
@@ -120,7 +140,14 @@ class MailService:
         mail = self._mail.get(mail_id)
 
         if mail is None:
-            return
+            return None
+
+        display_name = self._users.get_display_name(
+            mail.sender_node_id
+        )
+
+        if display_name is not None:
+            mail.sender_node_id = display_name
 
         if (
             mail.recipient_node_id != context.node_id
