@@ -101,7 +101,10 @@ class CommandRouter:
 
         if not arguments:
             return (
-                "Cumann Mhúscraí BBS\n"
+                "Cumann Mhúscraí BBS Help\n"
+                "========================\n"
+                "\n"
+                "Page 1 of 2\n"
                 "\n"
                 "Most users navigate using the menus.\n"
                 "Quick Commands provide faster access.\n"
@@ -118,12 +121,18 @@ class CommandRouter:
                 "RB.[id]\n"
                 "e.g. RB.12\n"
                 "\n"
-                "[N]ext for page 2"
+                "\n"
+                "[N]ext Page\n"
+                "[B]ack"
             )
 
         if arguments == ["2"]:
             return (
-                "Bulletins (cont.)\n"
+                "Cumann Mhúscraí BBS Help\n"
+                "========================\n"
+                "\n"
+                "Page 2 of 2\n"
+                "\n"
                 "\n"
                 "DB  Delete Bulletin\n"
                 "DB.[id]\n"
@@ -144,6 +153,8 @@ class CommandRouter:
                 "DM  Delete Mail\n"
                 "DM.[id]\n"
                 "e.g. DM.3"
+                "\n"
+                "[B]ack"
             )
 
         return "Usage: HELP or HELP.2"
@@ -223,24 +234,19 @@ class CommandRouter:
 
         return "\n".join(lines)
 
-    def _post_bulletin(
-        self,
-        arguments: list[str],
-    ) -> str:
-        """
-        Format:
+    def _post_bulletin(self, arguments: list[str]) -> str:
 
-            PB.subject.body
-        """
-
-        if len(arguments) != 2:
+        if len(arguments) < 2:
             return "Usage: PB.subject.body"
+
+        subject = arguments[0]
+        body = ".".join(arguments[1:])
 
         bulletin_id = self._bulletins.post(
             author_node_id=self._context.node_id,
             author_name=self._context.short_name,
-            subject=arguments[0],
-            body=arguments[1],
+            subject=subject,
+            body=body,
         )
 
         return f"Bulletin #{bulletin_id} posted."
@@ -346,15 +352,19 @@ class CommandRouter:
             SM.recipient.subject.body
         """
 
-        if len(arguments) != 3:
+        if len(arguments) < 3:
             return "Usage: SM.recipient.subject.body"
+        
+        recipient = arguments[0]
+        subject = arguments[1]
+        body = ".".join(arguments[2:])
 
         try:
             mail_id = self._mail.send(
                 context=self._context,
-                recipient_short_name=arguments[0],
-                subject=arguments[1],
-                body=arguments[2],
+                recipient_short_name=recipient,
+                subject=subject,
+                body=body,
             )
         except ValueError as error:
             return str(error)

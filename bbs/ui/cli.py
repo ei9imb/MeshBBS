@@ -508,12 +508,10 @@ class CommandLineInterface:
 
                         self._menu = "help2"
 
-                        response = self._router.execute("HELP.2")
+                        response = self._router.execute("HELP")
 
                         print()
                         print(response)
-                        print()
-                        print("[B]ack")
                         print()
 
                         continue
@@ -526,8 +524,18 @@ class CommandLineInterface:
 
                 match command.upper():
 
-                    case "B":
+                    case "P":
+                        self._menu = "help"
 
+                        response = self._router.execute("HELP.2")
+
+                        print()
+                        print(response)
+                        print()
+
+                        continue
+
+                    case "B":
                         self._display_main_menu()
                         continue
 
@@ -561,7 +569,7 @@ class CommandLineInterface:
 
                         continue
 
-                    case "H":
+                    case "H" | "HELP":
                         self._menu = "help"
 
                         response = self._router.execute("HELP")
@@ -569,10 +577,19 @@ class CommandLineInterface:
                         print()
                         print(response)
                         print()
-                        print("[B]ack")
-                        print()
 
                         continue
+
+            if self._menu == "main" and command.upper() == "HELP":
+                self._menu = "help"
+
+                response = self._router.execute("HELP")
+
+                print()
+                print(response)
+                print()
+
+                continue
 
             response = self._router.execute(command)
 
