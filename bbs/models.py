@@ -18,6 +18,7 @@ class User:
     long_name: str
     first_seen: str
     last_seen: str
+    is_admin: bool = False
 
 
 @dataclass(slots=True)

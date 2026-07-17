@@ -3,11 +3,13 @@ MeshBBS command router.
 """
 
 from __future__ import annotations
+from ast import arguments
 from bbs.context import ExecutionContext
 from bbs.services import bulletins
 from bbs.services.bulletins import BulletinService, DeleteResult
 from bbs.services.mail import MailService
 from bbs.services.statistics import StatisticsService
+from bbs.services.users import UserService
 
 
 class CommandRouter:
@@ -17,11 +19,13 @@ class CommandRouter:
         self,
         bulletins: BulletinService,
         mail: MailService,
+        users: UserService,
         statistics: StatisticsService,
         context: ExecutionContext,
     ) -> None:
         self._bulletins = bulletins
         self._mail = mail
+        self._users = users
         self._statistics = statistics
         self._context = context
 
@@ -74,7 +78,19 @@ class CommandRouter:
         
         if opcode == "ST":
             return self._statistics_summary()
-
+        
+        if opcode == "PROMOTE":
+            return self._promote(arguments)
+        
+        if opcode == "USERS":
+            return self._users_command()
+        
+        if opcode == "ADMINS":
+            return self._admins_command()
+        
+        if opcode == "DEMOTE":
+            return self._demote(arguments)
+        
         return f"Unknown command: {opcode}"
 
     def _help(
@@ -417,3 +433,123 @@ class CommandRouter:
             f"Mail.......{stats['mail']}\n"
             f"Uptime.....{stats['uptime']}"
         )
+    def _users_command(self) -> str:
+        """Display all known users."""
+
+        if not self._users.is_admin(self._context.node_id):
+            return "Permission denied."
+
+        users = self._users.list_users()
+
+        lines = [
+            "Known Users",
+            "-----------",
+            "",
+        ]
+
+        for user in users:
+            marker = "*" if user.is_admin else " "
+
+            lines.append(
+                f"{user.short_name:<8}{marker} {user.node_id}"
+            )
+
+        lines.append("")
+        lines.append(f"{len(users)} user(s)")
+
+        return "\n".join(lines)
+
+
+    # ------------------------------------------------------------------
+    # Administration Commands
+    # ------------------------------------------------------------------
+
+    def _admins_command(self) -> str:
+        """Display all administrator users."""
+
+        if not self._users.is_admin(self._context.node_id):
+            return "Permission denied."
+
+        admins = self._users.list_admins()
+
+        lines = [
+            "Administrators",
+            "--------------",
+            "",
+        ]
+
+        for user in admins:
+            lines.append(
+                f"{user.short_name:<8}* {user.node_id}"
+            )
+
+        lines.append("")
+        lines.append(f"{len(admins)} administrator(s)")
+
+        return "\n".join(lines)
+
+    def _promote(
+        self,
+        arguments: list[str],
+    ) -> str:
+        """
+        Administrator promotion command.
+
+        Formats:
+
+            PROMOTE.ME
+            PROMOTE.!NODEID
+        """
+
+        if arguments == ["ME"]:
+            self._users.promote(self._context.node_id)
+
+            return "Administrator privileges granted."
+
+        if not self._users.is_admin(self._context.node_id):
+            return "Permission denied."
+
+        if len(arguments) == 1:
+
+            node_id = arguments[0]
+
+            if not node_id.startswith("!"):
+                return "Unknown command."
+
+            user = self._users.get(node_id)
+
+            if user is None:
+                return "Unknown user."
+
+            self._users.promote(node_id)
+
+            return f"User {user.short_name} promoted to administrator."
+
+        return "Unknown command."
+    
+    def _demote(
+        self,
+        arguments: list[str],
+    ) -> str:
+        """Remove administrator privileges."""
+
+        if not self._users.is_admin(self._context.node_id):
+            return "Permission denied."
+
+        if len(arguments) == 1:
+
+            node_id = arguments[0]
+
+            if not node_id.startswith("!"):
+                return "Unknown command."
+
+            user = self._users.get(node_id)
+
+            if user is None:
+                return "Unknown user."
+
+            self._users.demote(node_id)
+
+            return f"User {user.short_name} demoted from administrator."
+
+        return "Unknown command."

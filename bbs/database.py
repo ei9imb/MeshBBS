@@ -77,7 +77,7 @@ class Database(Component):
 
         cursor.executescript(
             """
-            PRAGMA user_version = 4;
+            PRAGMA user_version = 5;
 
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -85,7 +85,8 @@ class Database(Component):
                 short_name TEXT,
                 long_name TEXT,
                 first_seen TEXT,
-                last_seen TEXT
+                last_seen TEXT,
+                is_admin INTEGER NOT NULL DEFAULT 0
             );
 
             CREATE TABLE IF NOT EXISTS user_aliases (

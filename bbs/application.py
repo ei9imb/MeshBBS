@@ -16,6 +16,7 @@ from bbs.services.bulletins import BulletinService
 from bbs.services.mail import MailService
 from bbs.ui.cli import CommandLineInterface
 from bbs.services.statistics import StatisticsService
+from bbs.services.users import UserService
 
 
 class MeshBBS:
@@ -64,15 +65,16 @@ class MeshBBS:
             assert self.database.bulletins is not None
             assert self.database.mail is not None
 
-            self.database.users.add(
-                User(
-                    node_id="!LOCALDEV",
-                    short_name="MBBS",
-                    long_name="Cumann Mhúscraí BBS",
-                    first_seen="2026-07-16T00:00:00",
-                    last_seen="2026-07-16T00:00:00",
+            if self.database.users.get("!LOCALDEV") is None:
+                self.database.users.add(
+                    User(
+                        node_id="!LOCALDEV",
+                        short_name="MBBS",
+                        long_name="Cumann Mhúscraí BBS",
+                        first_seen="2026-07-16T00:00:00",
+                        last_seen="2026-07-16T00:00:00",
+                    )
                 )
-            )
 
             self.database.users.add(
                 User(
@@ -93,6 +95,10 @@ class MeshBBS:
                 users=self.database.users,
             )
 
+            user_service = UserService(
+                users=self.database.users,
+            )
+
             statistics_service = StatisticsService(
                 users=self.database.users,
                 bulletins=self.database.bulletins,
@@ -109,6 +115,7 @@ class MeshBBS:
             router = CommandRouter(
                 bulletins=bulletin_service,
                 mail=mail_service,
+                users=user_service,
                 statistics=statistics_service,
                 context=context,
         )

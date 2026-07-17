@@ -50,13 +50,15 @@ class UserRepository:
             SET
                 short_name = ?,
                 long_name = ?,
-                last_seen = ?
+                last_seen = ?,
+                is_admin = ?
             WHERE node_id = ?
             """,
             (
                 user.short_name,
                 user.long_name,
                 user.last_seen,
+                int(user.is_admin),
                 user.node_id,
             ),
         )
@@ -73,7 +75,8 @@ class UserRepository:
                 short_name,
                 long_name,
                 first_seen,
-                last_seen
+                last_seen,
+                is_admin
             FROM users
             WHERE node_id = ?
             """,
@@ -89,6 +92,7 @@ class UserRepository:
             long_name=row["long_name"],
             first_seen=row["first_seen"],
             last_seen=row["last_seen"],
+            is_admin=bool(row["is_admin"]),
         )
 
     def find_by_short_name(
@@ -104,7 +108,8 @@ class UserRepository:
                 short_name,
                 long_name,
                 first_seen,
-                last_seen
+                last_seen,
+                is_admin
             FROM users
             WHERE short_name = ? COLLATE NOCASE
             """,
@@ -120,6 +125,7 @@ class UserRepository:
             long_name=row["long_name"],
             first_seen=row["first_seen"],
             last_seen=row["last_seen"],
+            is_admin=bool(row["is_admin"]),
         )
 
     def get_display_name(
@@ -173,9 +179,10 @@ class UserRepository:
                 short_name,
                 long_name,
                 first_seen,
-                last_seen
+                last_seen,
+                is_admin
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 user.node_id,
@@ -183,6 +190,7 @@ class UserRepository:
                 user.long_name,
                 user.first_seen,
                 user.last_seen,
+                int(user.is_admin),
             ),
         )
 
@@ -239,3 +247,62 @@ class UserRepository:
         ).fetchone()
 
         return int(row[0])
+    
+    def list_admins(self) -> list[User]:
+        """Return all administrator users."""
+
+        rows = self._connection.execute(
+            """
+            SELECT
+                node_id,
+                short_name,
+                long_name,
+                first_seen,
+                last_seen,
+                is_admin
+            FROM users
+            WHERE is_admin = 1
+            ORDER BY short_name COLLATE NOCASE
+            """
+        ).fetchall()
+
+        return [
+            User(
+                node_id=row["node_id"],
+                short_name=row["short_name"],
+                long_name=row["long_name"],
+                first_seen=row["first_seen"],
+                last_seen=row["last_seen"],
+                is_admin=bool(row["is_admin"]),
+            )
+            for row in rows
+        ]
+    
+    def list_users(self) -> list[User]:
+        """Return all known users."""
+
+        rows = self._connection.execute(
+            """
+            SELECT
+                node_id,
+                short_name,
+                long_name,
+                first_seen,
+                last_seen,
+                is_admin
+            FROM users
+            ORDER BY short_name COLLATE NOCASE
+            """
+        ).fetchall()
+
+        return [
+            User(
+                node_id=row["node_id"],
+                short_name=row["short_name"],
+                long_name=row["long_name"],
+                first_seen=row["first_seen"],
+                last_seen=row["last_seen"],
+                is_admin=bool(row["is_admin"]),
+            )
+            for row in rows
+        ]
