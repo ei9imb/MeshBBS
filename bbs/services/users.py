@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from bbs.models import User
 from bbs.repositories.users import UserRepository
+from datetime import datetime, UTC
 
 
 class UserService:
@@ -39,6 +40,47 @@ class UserService:
         """Return a user by node ID."""
 
         return self._users.get(node_id)
+    
+    def ensure_user(
+        self,
+        node_id: str,
+        short_name: str,
+        long_name: str,
+    ) -> User:
+        """
+        Return an existing user or register a new one.
+
+        The user's names and last_seen timestamp are updated on
+        every message.
+        """
+
+        user = self._users.get(
+            node_id,
+        )
+
+        now = datetime.now(UTC).isoformat()
+
+        if user is None:
+
+            user = User(
+                node_id=node_id,
+                short_name=short_name,
+                long_name=long_name,
+                first_seen=now,
+                last_seen=now,
+            )
+
+        else:
+
+            user.short_name = short_name
+            user.long_name = long_name
+            user.last_seen = now
+
+        self._users.add(
+            user,
+        )
+
+        return user    
 
     def promote(
         self,

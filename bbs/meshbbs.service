@@ -1,0 +1,22 @@
+[Unit]
+Description=MeshBBS Meshtastic Bulletin Board System
+After=network.target
+
+[Service]
+Type=simple
+
+User=ei9imb
+Group=ei9imb
+
+WorkingDirectory=/home/ei9imb/MeshBBS
+
+ExecStart=/home/ei9imb/MeshBBS/.venv/bin/python -m bbs.main
+
+Restart=on-failure
+RestartSec=5
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -17,6 +17,7 @@ from bbs.services.mail import MailService
 from bbs.ui.cli import CommandLineInterface
 from bbs.services.statistics import StatisticsService
 from bbs.services.users import UserService
+from bbs.session import SessionManager
 
 
 class MeshBBS:
@@ -29,6 +30,8 @@ class MeshBBS:
         self.logger = get_logger(__name__)
 
         self.database = Database()
+
+        self.sessions = SessionManager()
 
         self.components = [
             self.database,
@@ -54,6 +57,95 @@ class MeshBBS:
             component.stop()
 
         self.logger.info("Stopping MeshBBS")
+
+    def _build_router(
+        self,
+        context: ExecutionContext,
+        users: UserService,
+    ) -> CommandRouter:
+        """
+        Build a command router for the supplied execution
+        context.
+        """
+
+        if self.database.users is None:
+            raise RuntimeError(
+                "User repository not initialised"
+            )
+
+        assert self.database.bulletins is not None
+        assert self.database.mail is not None
+
+        bulletin_service = BulletinService(
+            self.database.bulletins,
+        )
+
+        mail_service = MailService(
+            mail=self.database.mail,
+            users=self.database.users,
+        )
+
+        statistics_service = StatisticsService(
+            users=self.database.users,
+            bulletins=self.database.bulletins,
+            mail=self.database.mail,
+        )
+
+        return CommandRouter(
+            bulletins=bulletin_service,
+            mail=mail_service,
+            users=users,
+            statistics=statistics_service,
+            context=context,
+        )
+    
+    def handle_message(
+        self,
+        node_id: str,
+        short_name: str,
+        long_name: str,
+        message: str,
+    ) -> str:
+        """
+        Process a message received from a transport and
+        return the reply.
+        """
+
+        if self.database.users is None:
+            raise RuntimeError(
+                "User repository not initialised"
+            )
+
+        users = UserService(
+            self.database.users,
+        )
+
+        user = users.ensure_user(
+            node_id=node_id,
+            short_name=short_name,
+            long_name=long_name,
+        )
+
+        self.sessions.get_or_create(
+            node_id,
+        )
+
+        context = ExecutionContext(
+            node_id=user.node_id,
+            short_name=user.short_name,
+            long_name=user.long_name,
+            is_admin=user.is_admin,
+        )
+
+        router = self._build_router(
+            context,
+            users,
+        )
+
+        return router.execute(
+            message,
+        )    
+
 
     def run(self) -> None:
         """Run the application."""
@@ -87,25 +179,6 @@ class MeshBBS:
                 )
             )
 
-            bulletin_service = BulletinService(
-                self.database.bulletins,
-            )
-
-            mail_service = MailService(
-                mail=self.database.mail,
-                users=self.database.users,
-            )
-
-            user_service = UserService(
-                users=self.database.users,
-            )
-
-            statistics_service = StatisticsService(
-                users=self.database.users,
-                bulletins=self.database.bulletins,
-                mail=self.database.mail,
-            )
-
             context = ExecutionContext(
                 node_id="!LOCALDEV",
                 short_name="MBBS",
@@ -113,13 +186,12 @@ class MeshBBS:
                 is_admin=True,
             )
 
-            router = CommandRouter(
-                bulletins=bulletin_service,
-                mail=mail_service,
-                users=user_service,
-                statistics=statistics_service,
-                context=context,
-        )
+            router = self._build_router(
+                context,
+                UserService(
+                    self.database.users,
+                ),
+            )
 
             cli = CommandLineInterface(router)
 
