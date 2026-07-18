@@ -14,7 +14,9 @@ Example:
 
 from __future__ import annotations
 
+
 import logging
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 # ---------------------------------------------------------------------
@@ -40,7 +42,7 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 _INITIALISED = False
 
 
-def initialise() -> None:
+def configure_logging() -> None:
     """
     Configure the application logger.
 
@@ -62,8 +64,13 @@ def initialise() -> None:
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
 
-    # File output
-    file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
+    # File output (rotating)
+    file_handler = RotatingFileHandler(
+        LOG_FILE,
+        maxBytes=5 * 1024 * 1024,   # 5 MB
+        backupCount=5,
+        encoding="utf-8",
+    )
     file_handler.setFormatter(formatter)
 
     # Console output
@@ -81,5 +88,5 @@ def get_logger(name: str) -> logging.Logger:
     Return a logger for the specified module.
     """
 
-    initialise()
+    configure_logging()
     return logging.getLogger(name)

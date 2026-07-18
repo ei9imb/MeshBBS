@@ -10,7 +10,6 @@ from datetime import UTC, datetime
 from enum import Enum
 
 from bbs.context import ExecutionContext
-from bbs.models import Bulletin
 from bbs.repositories import bulletins
 from bbs.repositories.bulletins import BulletinRepository
 
@@ -42,12 +41,21 @@ class BulletinService:
         Returns the bulletin ID.
         """
 
+        subject = subject.strip()
+        body = body.strip()
+
+        if not subject:
+            raise ValueError("Subject cannot be empty.")
+
+        if not body:
+            raise ValueError("Body cannot be empty.")
+
         bulletin = Bulletin(
             id=None,
             author_node_id=author_node_id,
             author_name=author_name,
-            subject=subject.strip(),
-            body=body.strip(),
+            subject=subject,
+            body=body,
             created=datetime.now(UTC).isoformat(timespec="seconds"),
         )
 

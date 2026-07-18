@@ -35,6 +35,7 @@ class StatisticsService:
             "mail": self._mail.count(),
             "uptime": self.uptime(),
         }
+    
     def uptime(self) -> str:
         """Return the application uptime."""
 

@@ -61,7 +61,8 @@ class MeshBBS:
         self.start()
 
         try:
-            assert self.database.users is not None
+            if self.database.users is None:
+                raise RuntimeError("User repository not initialised")
             assert self.database.bulletins is not None
             assert self.database.mail is not None
 
@@ -126,5 +127,8 @@ class MeshBBS:
 
             cli.run()
 
+        except Exception:
+            self.logger.exception("Unhandled exception")
+            raise
         finally:
             self.stop()

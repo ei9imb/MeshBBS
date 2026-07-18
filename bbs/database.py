@@ -49,6 +49,14 @@ class Database(Component):
         self._connection = sqlite3.connect(self._db_path)
         self._connection.row_factory = sqlite3.Row
 
+        # Enable SQLite foreign key enforcement
+        self.connection.execute("PRAGMA foreign_keys = ON")
+
+        # Wait up to 5 seconds if the database is temporarily locked
+        self.connection.execute("PRAGMA busy_timeout = 5000")
+
+        self._initialise_schema()
+
         self._initialise_schema()
 
         self.users = UserRepository(self.connection)
@@ -160,8 +168,6 @@ class Database(Component):
         
     def schema_version(self) -> int:
         """Return the database schema version."""
-
-        assert self.connection is not None
 
         row = self.connection.execute(
             "PRAGMA user_version"

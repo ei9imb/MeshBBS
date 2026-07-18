@@ -3,9 +3,8 @@ MeshBBS command router.
 """
 
 from __future__ import annotations
-from ast import arguments
+from bbs.logger import get_logger
 from bbs.context import ExecutionContext
-from bbs.services import bulletins
 from bbs.services.bulletins import BulletinService, DeleteResult
 from bbs.services.mail import MailService
 from bbs.services.statistics import StatisticsService
@@ -28,6 +27,7 @@ class CommandRouter:
         self._users = users
         self._statistics = statistics
         self._context = context
+        self.logger = get_logger(__name__)
 
     def execute(self, command: str) -> str:
         """
@@ -248,6 +248,11 @@ class CommandRouter:
             subject=subject,
             body=body,
         )
+        self.logger.info(
+            "Bulletin %s posted by %s",
+            bulletin_id,
+            self._context.short_name,
+        )
 
         return f"Bulletin #{bulletin_id} posted."
 
@@ -314,6 +319,12 @@ class CommandRouter:
         if result is DeleteResult.PERMISSION_DENIED:
             return "Permission denied."
 
+        self.logger.info(
+            "Bulletin %s deleted by %s",
+            bulletin_id,
+            self._context.short_name,
+        )
+
         return "Bulletin deleted."
 
     # ------------------------------------------------------------------
@@ -366,6 +377,14 @@ class CommandRouter:
                 subject=subject,
                 body=body,
             )
+
+            self.logger.info(
+                "Mail %s sent from %s to %s",
+                mail_id,
+                self._context.short_name,
+                recipient,
+            )
+            
         except ValueError as error:
             return str(error)
 
@@ -443,6 +462,7 @@ class CommandRouter:
             f"Mail.......{stats['mail']}\n"
             f"Uptime.....{stats['uptime']}"
         )
+    
     def _users_command(self) -> str:
         """Display all known users."""
 
@@ -514,6 +534,11 @@ class CommandRouter:
         if arguments == ["ME"]:
             self._users.promote(self._context.node_id)
 
+            self.logger.info(
+                "%s granted themselves administrator privileges",
+                self._context.short_name,
+            )
+
             return "Administrator privileges granted."
 
         if not self._users.is_admin(self._context.node_id):
@@ -532,6 +557,12 @@ class CommandRouter:
                 return "Unknown user."
 
             self._users.promote(node_id)
+
+            self.logger.info(
+                "User %s promoted to administrator by %s",
+                user.short_name,
+                self._context.short_name,
+            )
 
             return f"User {user.short_name} promoted to administrator."
 
@@ -559,6 +590,12 @@ class CommandRouter:
                 return "Unknown user."
 
             self._users.demote(node_id)
+
+            self.logger.info(
+                "User %s demoted by %s",
+                user.short_name,
+                self._context.short_name,
+            )
 
             return f"User {user.short_name} demoted from administrator."
 
