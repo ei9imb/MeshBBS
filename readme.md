@@ -11,7 +11,7 @@ MeshBBS is a Bulletin Board System designed for the Meshtastic network.
 
 ## Current Status
 
-Version: 0.1.0
+Version: 1.0.0
 
 Completed:
 - Project framework
